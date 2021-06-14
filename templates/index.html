@@ -6,9 +6,14 @@
                     <div class="login-form">
                         <span class="login-form-title p-b-70">Actrifier</span>
                         <form action="/card" method="post">
-                            <div class="wrap-input m-t-15 m-b-35" data-validate="Enter actor name">
-                                <input class="input" type="text" name="name" autofocus>
-                                <span class="focus-input" data-placeholder="Actor name"></span>
+                            <div class="search-form m-b-40">
+                                <input class="form-control" list="datalistOptions" id="exampleDataList" placeholder="Type to search..." name="name">
+                                <datalist id="datalistOptions">
+                                    <!--Print dynamic-->
+                                    {% for name in lucky_list %}
+                                        <option value="{{ name }}">
+                                    {% endfor %}
+                                </datalist>
                             </div>
 
                             <div class="container-login-form-btn m-b-45">

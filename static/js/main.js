@@ -8,9 +8,9 @@ $(document).ready(function () {
     function lucky () {
         var btn = $(".lucky_btn");
         btn.click( function (event) {
-            $.post('/lucky');
+            $.post('/card');
         })
     }
     search();
+    lucky();
 });
-//lucky_btn

@@ -2,32 +2,35 @@
 {% block content %}
         <div class="container">
             <div class="app-title">
-                <label for="exampleDataList" class="form-label login-form-title m-t-15"><a href="index.html">Actrifier</a></label>
+                <label for="exampleDataList" class="form-label login-form-title m-t-15"><a href="/">Actrifier</a></label>
             </div>
             <div class="row">
-                <div class="col-md-8">
-                    <div class="search-form">
-                        <input class="form-control" list="datalistOptions" id="exampleDataList" placeholder="Type to search...">
-                        <datalist id="datalistOptions">
-                            <!--Print dynamic-->
-                            <option value="San Francisco">
-                            <option value="New York">
-                            <option value="Seattle">
-                            <option value="Los Angeles">
-                            <option value="Chicago">
-                        </datalist>
+                <form action="/card" method="post" style="display: flex">
+                    <div class="col-md-8">
+
+                        <div class="search-form">
+                            <input class="form-control" list="datalistOptions" id="exampleDataList" placeholder="Type to search..." name="name">
+                            <datalist id="datalistOptions">
+                                <!--Print dynamic-->
+                                {% for name in lucky_list %}
+                                    <option value="{{ name }}">
+                                {% endfor %}
+                            </datalist>
+                        </div>
                     </div>
-                </div>
-                <div class="col-md-2">
-                    <div class="container-login-form-btn">
-                        <button class="login-form-btn card-btn">Search</button>
+
+                    <div class="col-md-2">
+                        <div class="container-login-form-btn m-l-10 m-r-10">
+                            <button class="login-form-btn card-btn">Search</button>
+                        </div>
                     </div>
-                </div>
-                <div class="col-md-2">
-                    <div class="container-login-form-btn m-b-45">
-                        <button class="login-form-btn card-btn">I'm Feeling Lucky</button>
+                    <div class="col-md-2">
+                        <div class="container-login-form-btn m-b-45 m-l-30">
+                            <button class="login-form-btn card-btn">I'm Feeling Lucky</button>
+                        </div>
                     </div>
-                </div>
+                </form>
+
             </div>
         </div>
 
@@ -53,7 +56,11 @@
                     </div>
 
                     <div class="bio-info m-t-15">
-                        <p>{{ actor_bio }}</p>
+                        <p>{{ actor_bio }}
+                            <a href="{{ actor_bio_more }}">
+                                Show more
+                            </a>
+                        </p>
                     </div>
 
                     <div class="movie-count m-t-15">
@@ -69,12 +76,12 @@
                 {% for i in movie_info %}
                     <div class="col-md-4 movie m-t-15 m-b-15">
                         <div class="row">
-                            <!--
-                            <div class="col-md-3">
+
+                            <div class="col-md-3  m-r-15">
                                 <div class="poster">
-                                    <img src="/static/img/1.jpg" class="rounded float-start" alt="{{ i.title }}">
+                                    <img src="/static/img/movie_poster.svg" class="rounded float-start" alt="{{ i.title }}">
                                 </div>
-                            </div>-->
+                            </div>
                             <div class="col-md-6">
                                 <div class="title">
                                     <a href="{{ i.link }}">
@@ -92,31 +99,6 @@
                     </div>
                 {% endfor %}
 
-
-
-                <!--
-                <div class="col-md-6 movie m-t-15 m-b-15">
-                    <div class="row">
-                        <div class="col-md-3">
-                            <div class="poster">
-                                <img src="/static/img/1.jpg" class="rounded float-start" alt="...">
-                            </div>
-
-                        </div>
-                        <div class="col-md-6">
-                            <div class="title">
-                                <p>Some title</p>
-                            </div>
-                            <div class="year">
-                                <p>1903</p>
-                            </div>
-                            <div class="cast">
-                                <p>List of actor</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                -->
             </div>
         </div>
 {% endblock %}
