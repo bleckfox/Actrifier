@@ -1,7 +1,8 @@
+from imdb_parser import *
+
 from flask import Flask
 from flask import render_template
 from flask import request
-import parser
 
 app = Flask(__name__)
 
@@ -10,7 +11,6 @@ app = Flask(__name__)
 def index():
     return render_template("index.html")
 
-
 @app.route('/card', methods=['POST'])
 def card():
     if request.method == "POST":
@@ -18,9 +18,9 @@ def card():
         if name == '':
             print("name is empty")
         else:
-            search_name = parser.input_name(name)
-            actor_id = parser.id_request_json(search_name)
-            actor_info = parser.responce_html(actor_id)
+            search_name = input_name(name)
+            actor_id = id_request_json(search_name)
+            actor_info = responce_html(actor_id)
             print(actor_info)
         return render_template("card.html",
                                actor_name=actor_info[0],
@@ -32,7 +32,7 @@ def card():
                                actor_number_movie=actor_info[6],
                                movie_info=actor_info[7])
 
-@app.route('/api/v1/subscription', )
+#@app.route('/api/v1/subscription', )
 
 if __name__ == '__main__':
     app.run()
