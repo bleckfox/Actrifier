@@ -1,0 +1,122 @@
+{% extends 'base.html' %}
+{% block content %}
+        <div class="container">
+            <div class="app-title">
+                <label for="exampleDataList" class="form-label login-form-title m-t-15"><a href="index.html">Actrifier</a></label>
+            </div>
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="search-form">
+                        <input class="form-control" list="datalistOptions" id="exampleDataList" placeholder="Type to search...">
+                        <datalist id="datalistOptions">
+                            <!--Print dynamic-->
+                            <option value="San Francisco">
+                            <option value="New York">
+                            <option value="Seattle">
+                            <option value="Los Angeles">
+                            <option value="Chicago">
+                        </datalist>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="container-login-form-btn">
+                        <button class="login-form-btn card-btn">Search</button>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="container-login-form-btn m-b-45">
+                        <button class="login-form-btn card-btn">I'm Feeling Lucky</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="row">
+                <div class="col-md-3">
+                    <!--Photo-->
+                    ​<img src="{{ actor_img_link }}" class="img-thumbnail" alt="{{ actor_name }}">
+
+                </div>
+                <div class="col-md-6">
+                    <!--Some info here-->
+                    <div class="actor-name">
+                        <p>{{ actor_name }}</p>
+                    </div>
+
+                    <div class="was-born">
+                        <p>Born: {{ actor_born_month }} {{ actor_born_year }}</p>
+                    </div>
+
+                    <div class="year-old">
+                        <p>Age: {{ actor_current_year }}</p>
+                    </div>
+
+                    <div class="bio-info m-t-15">
+                        <p>{{ actor_bio }}</p>
+                    </div>
+
+                    <div class="movie-count m-t-15">
+                        <p>Starred in <b>{{ actor_number_movie }}</b> movies</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="row">
+
+                {% for i in movie_info %}
+                    <div class="col-md-4 movie m-t-15 m-b-15">
+                        <div class="row">
+                            <!--
+                            <div class="col-md-3">
+                                <div class="poster">
+                                    <img src="/static/img/1.jpg" class="rounded float-start" alt="{{ i.title }}">
+                                </div>
+                            </div>-->
+                            <div class="col-md-6">
+                                <div class="title">
+                                    <a href="{{ i.link }}">
+                                        <p>{{ i.title }}</p>
+                                    </a>
+                                </div>
+                                <div class="year">
+                                    <p>{{ i.year }}</p>
+                                </div>
+                                <div class="cast">
+                                    <p>Role: {{ i.role }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+
+
+
+                <!--
+                <div class="col-md-6 movie m-t-15 m-b-15">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="poster">
+                                <img src="/static/img/1.jpg" class="rounded float-start" alt="...">
+                            </div>
+
+                        </div>
+                        <div class="col-md-6">
+                            <div class="title">
+                                <p>Some title</p>
+                            </div>
+                            <div class="year">
+                                <p>1903</p>
+                            </div>
+                            <div class="cast">
+                                <p>List of actor</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                -->
+            </div>
+        </div>
+{% endblock %}

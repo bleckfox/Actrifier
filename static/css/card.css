@@ -1,0 +1,21 @@
+.app-title {
+  text-align: center; }
+  .app-title .login-form-title {
+    display: inline-block; }
+
+.card-btn {
+  padding: 10px !important;
+  height: 100% !important; }
+
+.actor-name p {
+  font-size: 30px;
+  font-weight: bold; }
+
+.movie-count p {
+  font-size: 18px; }
+
+.movie .poster img {
+  width: 100px;
+  height: 100px; }
+
+/*# sourceMappingURL=card.css.map */

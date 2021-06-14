@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% block content %}
+        <div class="limiter">
+            <div class="container-login">
+                <div class="wrap-login p-t-55 p-b-20">
+                    <div class="login-form">
+                        <span class="login-form-title p-b-70">Actrifier</span>
+                        <form action="/card" method="post">
+                            <div class="wrap-input m-t-15 m-b-35" data-validate="Enter actor name">
+                                <input class="input" type="text" name="name" autofocus>
+                                <span class="focus-input" data-placeholder="Actor name"></span>
+                            </div>
+
+                            <div class="container-login-form-btn m-b-45">
+                                <button class="login-form-btn search_btn">Search</button>
+                            </div>
+
+                            <div class="container-login-form-btn m-b-45">
+                                <button class="login-form-btn lucky_btn">I'm Feeling Lucky</button>
+                            </div>
+                        </form>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+{% endblock %}
