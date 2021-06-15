@@ -3,8 +3,9 @@ import sched
 import time
 from random import randrange
 from threading import Thread
-
 from firebase_admin import credentials, initialize_app, messaging
+
+from imdb_parser import get_actor_info
 
 
 class CheckerScheduler:
@@ -68,16 +69,41 @@ class CheckerScheduler:
         if actorId not in self.subscriptions:
             raise NameError
 
-        # TODO: call parser
-        count, completedCount = 10, 1  # parser result
-        if count > self.subscriptions[actorId]['count']:
-            # TODO: notify all firebase tokens about a future title (about 1-3 years before release); ALSO save new counts
-            pass
-        if completedCount > self.subscriptions[actorId]['completedCount']:
-            # TODO: notify all firebase tokens about upcoming title (usually in next 6 months or so); ALSO save new counts
-            pass
+        info = get_actor_info(actorId)
+        count, completedCount, actorName, actorPicture, lastCompletedTitle, lastTitle = info[7], len(info[9]), info[0], info[4], info[8][0], info[10]
+        save = False
+        notification = None
+
+        if 'count' not in self.subscriptions[actorId] or 'completedCount' not in self.subscriptions[actorId]:
+            self.subscriptions[actorId]['count'] = count
+            self.subscriptions[actorId]['completedCount'] = completedCount
+            save = True
+        else:
+            if completedCount < self.subscriptions[actorId]['completedCount']:
+                self.subscriptions[actorId]['completedCount'] = completedCount
+                save = True
+            elif completedCount > self.subscriptions[actorId]['completedCount']:
+                notification = messaging.Notification(title=f'{actorName} has a new title upcoming!', body=f'Title named {lastCompletedTitle["title"]} going to be released soon', image=actorPicture)
+                self.subscriptions[actorId]['completedCount'] = completedCount
+                save = True
+
+            if count < self.subscriptions[actorId]['count']:
+                self.subscriptions[actorId]['count'] = count
+                save = True
+            elif count > self.subscriptions[actorId]['count']:
+                notification = messaging.Notification(title=f'{actorName} just got a new title!', body=f'New title {lastCompletedTitle} going to be a hit in a few years', image=actorPicture)
+                self.subscriptions[actorId]['count'] = count
+                save = True
+
+        if save:
+            self.saveSubscriptions()
 
         self._appendCheckerSchedule(actorId, randomTime=False)
+
+        if notification:
+            android = messaging.AndroidConfig(notification=messaging.AndroidNotification(default_sound='', default_vibrate_timings=True, icon='launch_logo'), priority="high")
+            msg = messaging.MulticastMessage(tokens=self.subscriptions[actorId]['fireTokens'], notification=notification, android=android, data={"click_action": "FLUTTER_NOTIFICATION_CLICK"})
+            messaging.send_multicast(msg)
 
     def saveSubscriptions(self):
         dumpString = json.dumps(self.subscriptions)

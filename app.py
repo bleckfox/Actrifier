@@ -108,17 +108,18 @@ def search():
 def actor():
     if 'id' in request.args and request.args.get('id', type=str).startswith('nm'):
         try:
-            actor = get_actor_info(request.args.get('id', type=str))
+            info = get_actor_info(request.args.get('id', type=str))
             return jsonify({'actor': {
-                'name': actor[0],
-                'birth_info': actor[1],
-                'death_info': actor[2],
-                'age': actor[3],
-                'photo': actor[4],
-                'bio': actor[5],
-                'extended_bio_link': actor[6],
-                'movie_count': actor[7],
-                'movies': actor[8],
+                'id': request.args.get('id', type=str),
+                'name': info[0],
+                'birth_info': info[1] if info[1] != ['Not found'] else None,
+                'death_info': info[2] if info[2] != [] else None,
+                'age': info[3],
+                'photo': info[4],
+                'bio': info[5],
+                'extended_bio_link': info[6],
+                'movie_count': info[7],
+                'movies': info[8],
             }}), 200
         except NameError:
             abort(404)
@@ -160,4 +161,4 @@ def removeSubscription():
 
 
 if __name__ == '__main__':
-    app.run()
+    app.run(host='0.0.0.0')

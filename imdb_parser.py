@@ -198,6 +198,7 @@ def get_actor_info(id):
     except:
         count_movie = 0
         movie_list = []
+        last_movie = None
 
     return_value_explaine = ['name - строка',
                              'born_info - список (см.выше)',
