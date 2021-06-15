@@ -1,19 +1,22 @@
-from random import randint
+from random import randint, choice
 
 from flask import Flask
 from flask import render_template
-from flask import request
+from flask import request, abort, jsonify
 
 from imdb_parser import *
 from scheduled_cheker import CheckerScheduler
 
 app = Flask(__name__)
+checkerScheduler = CheckerScheduler()
+
 
 @app.route('/')
 @app.route('/index')
 def index():
     return render_template("index.html",
                            lucky_list=lucky_list)
+
 
 @app.route('/card', methods=['POST'])
 def card():
@@ -67,6 +70,7 @@ def card():
                                actor_number_movie=actor_info[7],
                                movie_info=actor_info[8])
 
+
 # @app.route('/actor', methods = ['POST'])
 # def get_post_javascript_data():
 #     print("I'm here")
@@ -82,6 +86,78 @@ def card():
 # Нужно сформированный список отобразить на сайте
 # Js в помощь
 
+
+@app.route('/api/v1/search', methods=['GET'])
+def search():
+    name = None
+    if 'feelingLucky' in request.args and request.args.get('feelingLucky', type=int) == 1:
+        name = choice(lucky_list)
+    elif 'name' in request.args:
+        name = request.args.get('name', type=str)
+    else:
+        abort(400)
+
+    actors = request_js(input_name(name))
+    if len(actors) > 0:
+        return jsonify({'results': actors, 'feelingLucky': False}), 200
+    else:
+        return jsonify(), 404
+
+
+@app.route('/api/v1/actor', methods=['GET'])
+def actor():
+    if 'id' in request.args and request.args.get('id', type=str).startswith('nm'):
+        try:
+            actor = get_actor_info(request.args.get('id', type=str))
+            return jsonify({'actor': {
+                'name': actor[0],
+                'birth_info': actor[1],
+                'death_info': actor[2],
+                'age': actor[3],
+                'photo': actor[4],
+                'bio': actor[5],
+                'extended_bio_link': actor[6],
+                'movie_count': actor[7],
+                'movies': actor[8],
+            }}), 200
+        except NameError:
+            abort(404)
+    else:
+        abort(400)
+
+
+@app.route('/api/v1/subscription', methods=['PUT'])
+def addSubscription():
+    if 'id' in request.args and 'firebaseToken' in request.args:
+        actorId = request.args.get('id', type=str)
+        firebaseToken = request.args.get('firebaseToken', type=str)
+
+        if check_actor_existence(actorId) is not None:
+            try:
+                checkerScheduler.addSubscription(actorId=actorId, firebaseToken=firebaseToken)
+            except ValueError:
+                abort(400)
+            return jsonify(), 201
+        else:
+            abort(404)
+    else:
+        abort(400)
+
+
+@app.route('/api/v1/subscription', methods=['DELETE'])
+def removeSubscription():
+    if 'id' in request.args and 'firebaseToken' in request.args:
+        actorId = request.args.get('id', type=str)
+        firebaseToken = request.args.get('firebaseToken', type=str)
+
+        try:
+            checkerScheduler.removeSubscription(actorId=actorId, firebaseToken=firebaseToken)
+            return jsonify(), 200
+        except ValueError:
+            abort(404)
+    else:
+        abort(400)
+
+
 if __name__ == '__main__':
-    checkerScheduler = CheckerScheduler()
     app.run()
