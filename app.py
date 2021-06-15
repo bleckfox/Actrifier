@@ -23,7 +23,7 @@ def card():
         if name == '':
             random_actor = randint(0, len(lucky_list))
             search_name = input_name(lucky_list[random_actor])
-            actor_id = id_request_json(search_name)
+            actor_id = request_js(search_name)[0]['id']
             actor_info = responce_html(actor_id)
 
         # Run search if name field is not empty
@@ -31,7 +31,7 @@ def card():
             if name not in lucky_list:
                 lucky_list.append(name)
             search_name = input_name(name)
-            actor_id = id_request_json(search_name)
+            actor_id = request_js(search_name)[0]['id']
             actor_info = responce_html(actor_id)
 
         return render_template("card.html",

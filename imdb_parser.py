@@ -23,17 +23,46 @@ def input_name(name):
     return_value = [first_symbol, name_for_request]
     return return_value
 
-
-def id_request_json(search):
-    first_symbol = search[0]
+def request_js(search):
+    first_letter = search[0]
     name = search[1]
-    url = "https://v2.sg.media-imdb.com/suggestion/" + first_symbol + "/" + name + ".json"
+    url = "https://v2.sg.media-imdb.com/suggestion/" + first_letter + "/" + name + ".json"
     responce = urlopen(url)
-    data_json = json.loads(responce.read())
-    # Если только имя
-    first_level = data_json['d'][0]
-    actor_id = first_level['id']
-    return actor_id
+    # Заменяем _ на "пробел", чтобы посчитать количество слов
+    replace_name = name.replace('_', ' ')
+    count_name = replace_name.split(' ')
+    # Если 2 и больше слов, считаем, что ввели имя и фамилию
+    # Количество id будет равно 1
+    actor_info_from_json = []
+    if (len(count_name)) >= 2:
+        data_json = json.loads(responce.read())
+        first_level = data_json['d'][0]
+        actor_info_from_json.append({
+            'name': first_level['l'],
+            'id': first_level['id'],
+            'photo': first_level['i']['imageUrl'],
+            'description': first_level['s']
+        })
+    # Иначе собираем все id
+    else:
+        try:
+            data_json = json.loads(responce.read())
+            # Однозначно не будет 150 людей с одним именем на imdb
+            for i in range(150):
+                level = data_json['d'][i]
+                actor_info_from_json.append({
+                    'name': level['l'],
+                    'id': level['id'],
+                    'photo': level['i']['imageUrl'],
+                    'description': level['s']
+                })
+        # Поэтому всегда будут выходить исключения
+        # Их можно игнорировать
+        except:
+            print('Two or more words in search field')
+            print('OR')
+            print('Something fucked up ! ! !')
+    return actor_info_from_json
 
 
 def responce_html(id):
@@ -101,17 +130,21 @@ def responce_html(id):
     for i in range(int(count_movie)):
         # получаем много инфы в выводе, берем только роль
         # заменяем точки на пустую строку, убираем пробелы перед ролью
-        role_list.append(role[i].text.split('\n')[-2].replace('...', '').strip())
+        check_role = role[i].text.split('\n')[-2].replace('...', '').strip()
+        if check_role != '':
+            role_list.append(check_role)
 
     movie_list = []
 
-    for i in movie_title:
-        list_index = movie_title.index(i)
+    for i in range(int(count_movie)):
+        #list_index = movie_title.index(i)
         movie_list.append({
             'title': i,
-            'year': movie_date[list_index],
-            'link': movie_link[list_index],
-            'role': role_list[list_index]
+            'year': movie_date[i],
+            'link': movie_link[i],
+            'role': role_list[i] # здесь значений меньше
+                                 # чем в списке фильмов
+                                 # обработка complete
         })
 
     print(movie_list)

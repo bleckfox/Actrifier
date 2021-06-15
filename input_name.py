@@ -6,10 +6,13 @@ import unicodedata
 
 def input_name():
     name = input("Type name: ").lower()  # переводим в нижний регистр
-    split_name = name.split()            # разделяем по пробелам
-    first_letter = name[0]               # получаем первую букву
-    name_for_requst = split_name[0] + '_' + split_name[1]
-    return_value = [first_letter, name_for_requst]
+    first_symbol = name[0]
+    name_for_request = name.replace(' ', '_')
+    return_value = [first_symbol, name_for_request]
+    # split_name = name.split()            # разделяем по пробелам
+    # first_letter = name[0]               # получаем первую букву
+    # name_for_requst = split_name[0] + '_' + split_name[1]
+    # return_value = [first_letter, name_for_requst]
     return return_value
 
 def request_json():
@@ -23,6 +26,7 @@ def request_json():
     actor_id = first_level['id']
     return actor_id
 
+# get poster and cast
 def get_movie_info(link):
     res = requests.get(link)
     res.raise_for_status()
@@ -38,17 +42,6 @@ def get_movie_info(link):
     for i in movie_cast:
         cast_list.append(i.text)
 
-
-
-    # movie_poster_request = soup.select_one('.poster img')
-    # movie_poster = ''
-    # if movie_poster_request is not None:
-    #     movie_poster = movie_poster_request.get('src')
-    #movie_cast = soup.select('div.credit_summary_item')
-    #movie_info = [#movie_poster]
-    # file = open('text.txt', 'a')
-    # file.write(str(soup.prettify().encode('utf-8')))
-    # file.close()
     return movie_poster
 
 def responce_html(id):
@@ -65,47 +58,99 @@ def responce_html(id):
     count_movie = soup.select_one('#filmography div').text.split()[3][1:]
     # filmography = soup.select('#filmography .filmo-category-section span.year_column')
     print(int(count_movie))
-    role = soup.select('#filmography .filmo-category-section div')
-    rol = []
-    for i in range(int(count_movie)):
-        # получаем много инфы в выводе, берем только роль
-        # заменяем точки на пустую строку, убираем пробелы перед ролью
-        rol.append(role[i].text.split('\n')[-2].replace('...', '').strip())
-    print(len(rol))
-    filmography = soup.find_all('span', class_='year_column')
-    f = []
-    for i in filmography:
-        f.append(unicodedata.normalize("NFKD", i.text))
 
-    a = []
-    for i in f:
-        a.append(i.strip())
-    general_url = 'https://www.imdb.com'
-    movie_request = soup.select('#filmography .filmo-category-section b a')
-    movie_link = []
-    movie_title = []
-    movie_poster = []
-    for i in movie_request:
-        index = movie_request.index(i)
-        if a[index] != '':
-            movie_link.append(general_url + i.get('href'))
-            movie_title.append(i.text)
+    # Get year of movie
+    # filmography = soup.find_all('span', class_='year_column')
+    # f = []
+    # for i in filmography:
+    #     f.append(unicodedata.normalize("NFKD", i.text))
+    # a = []
+    # for i in f:
+    #     a.append(i.strip())
+
+    # Get movie title and link
+    # general_url = 'https://www.imdb.com'
+    # movie_request = soup.select('#filmography .filmo-category-section b a')
+    # movie_link = []
+    # movie_title = []
+    # for i in range(int(count_movie)):
+    #     index = movie_request.index(movie_request[i])
+    #     if a[index] != '':
+    #         movie_link.append(general_url + movie_request[i].get('href'))
+    #         movie_title.append(movie_request[i].text)
+
+    # for i in movie_request:
+    #     index = movie_request.index(i)
+    #     if a[index] != '':
+    #         movie_link.append(general_url + i.get('href'))
+    #         movie_title.append(i.text)
 
     #a = get_movie_info(movie_link[0])
     # for i in range(5):
     #     print(i)
     #     movie_poster.append(get_movie_info(movie_link[i]))
 
+    # Get actor's role
+    role = soup.select('#filmography .filmo-category-section div')
+    rol = []
+    for i in range(int(count_movie)):
+        # получаем много инфы в выводе, берем только роль
+        # заменяем точки на пустую строку, убираем пробелы перед ролью
+        ro = role[i].text.split('\n')[-2].replace('...', '').strip()
+        if ro != '':
+            rol.append(ro)
+    print(len(rol))
+    print(int(count_movie))
     return rol
 
-a = request_json()
-b = responce_html(a)
-print(b)
+# a = request_json()
+# b = responce_html(a)
+# print(b)
 
+def request_js():
+    input = input_name()
+    first_letter = input[0]
+    name = input[1]
+    url = "https://v2.sg.media-imdb.com/suggestion/" + first_letter + "/" + name + ".json"
+    responce = urlopen(url)
+    # Заменяем _ на "пробел", чтобы посчитать количество слов
+    replace_name = name.replace('_', ' ')
+    count_name = replace_name.split(' ')
+    # Если 2 и больше слов, считаем, что ввели имя и фамилию
+    # Количество id будет равно 1
+    actor_info_from_json = []
+    if (len(count_name)) >= 2:
+        data_json = json.loads(responce.read())
+        first_level = data_json['d'][0]
+        actor_info_from_json.append({
+            'name': first_level['l'],
+            'id': first_level['id'],
+            'photo': first_level['i']['imageUrl'],
+            'description': first_level['s']
+        })
+    # Иначе собираем все id
+    else:
+        try:
+            data_json = json.loads(responce.read())
+            print(type(data_json))
+            for i in range(150):
+                level = data_json['d'][i]
+                actor_info_from_json.append({
+                    'name': level['l'],
+                    'id': level['id'],
+                    'photo': level['i']['imageUrl'],
+                    'description': level['s']
+                })
+        except:
+            print('Two or more words in search field')
+            print('OR')
+            print('Something fucked up ! ! !')
+
+    return actor_info_from_json
+
+a = request_js()
+print(a)
 '''
-
-нужная функция для вывода списка актеров
-    есть имя, id, фото, описание json [s]
     
 запрос ролей
 
@@ -113,11 +158,11 @@ print(b)
 
 нужно отслеживать complete
 
+выводить список фильмов не из credits, а считать его, как длину списка
+
 проверить если актер умер
 
 вывести подсказку на имя актера (ввели только имя, 
     показываем всех актеров с таким именем)
-
-
 
 '''
