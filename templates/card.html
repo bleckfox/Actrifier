@@ -48,11 +48,17 @@
                     </div>
 
                     <div class="was-born">
-                        <p>Born: {{ actor_born_month }} {{ actor_born_year }}</p>
+                        <p>Born: {{ actor_born_info[0] }}, {{ actor_born_info[1] }} in {{ actor_born_info[2] }} </p>
                     </div>
 
+                    {% if actor_death_info %}
+                        <div class="was-born">
+                            <p>Died: {{ actor_death_info[0] }}, {{ actor_death_info[1] }} in {{ actor_death_info[2] }} </p>
+                        </div>
+                    {% endif %}
+
                     <div class="year-old">
-                        <p>Age: {{ actor_current_year }}</p>
+                        <p>Age: {{ actor_age }}</p>
                     </div>
 
                     <div class="bio-info m-t-15">

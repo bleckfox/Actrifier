@@ -3,6 +3,7 @@ import json
 import bs4
 import requests
 import unicodedata
+import datetime
 
 def input_name():
     name = input("Type name: ").lower()  # переводим в нижний регистр
@@ -43,6 +44,131 @@ def get_movie_info(link):
         cast_list.append(i.text)
 
     return movie_poster
+
+def get_actor_info(id):
+    # Чтобы посчитать сколько актеру сейчас лет (если жив)
+    now = datetime.datetime.now()
+    actor_id = id
+    general_url = 'https://www.imdb.com'
+    main_url = 'https://www.imdb.com/name/'
+    make_request = main_url + actor_id
+    res = requests.get(make_request)
+    res.raise_for_status()
+    soup = bs4.BeautifulSoup(res.text, features='html.parser')
+    body = soup.find('div', {'class': 'pagecontent'})
+
+    # Get actor name
+    name = body.find('h1', {'class': 'header'}).find('span', {'class': 'itemprop'}).text
+
+    # Get actor photo
+    img_link = body.find('img', {'id': 'name-poster'}).get('src')
+
+    # Get actor bio
+    bio_body = body.find('div', {'id': 'name-bio-text'}).find('div', {'class': 'inline'})
+    bio = bio_body.text.split('\n')[1]
+    bio_more = general_url + bio_body.find('span').find('a').get('href')
+
+    # Get actor born info
+    try:
+        born_request = body.find('div', {'id': 'name-born-info'}).find_all('a')
+        born_info = []
+        death_info = []
+        # ['August 20', '1974', 'Vicenza, Veneto, Italy']
+        for i in born_request:
+            born_info.append(i.text)
+
+        # Проверяем жив ли актер
+        try:
+            # Умер
+            death_request = body.find('div', {'id': 'name-death-info'}).find_all('a')
+            for i in death_request:
+                death_info.append(i.text)
+
+            # Проверка месяца в дате рождения. Если есть выполним код ниже
+            if len(born_info[0]) > 4:
+                age = int(death_info[1]) - int(born_info[1])
+            else:
+                age = int(death_info[0]) - int(born_info[0])
+        except:
+            # Живой
+            # Проверка месяца в дате рождения. Если есть выполним код ниже
+            if len(born_info[0]) > 4:
+                age = now.year - int(born_info[1])
+            else:
+                age = now.year - int(born_info[0])
+
+
+    except:
+        born_month = 'Not found'
+        born_year = ''
+        age = 'Not found'
+
+    # Get movie title and link and role
+    movie_title = []
+    movie_link = []
+    movie_year = []
+    filtered_movie_year = []    # Вспомогательный список для фильтрации
+    role_list = []              # Вспомогательный список для фильтрации
+    role = []
+    count_production = []
+    movie_request = body.find('div', {'id': 'filmography'})\
+        .find('div', {'class': 'filmo-category-section'})
+    title_request = movie_request.find_all('b')
+    year_request = movie_request.find_all('span', {'class': 'year_column'})
+    role_request = movie_request.find_all('div', {'class': 'filmo-row'})
+    try:
+        in_production = movie_request.find_all('a', {'class': 'in_production'})
+        for i in in_production:
+            count_production.append(i)
+        # if compete
+    except:
+        print('Нет статуса in_production')
+
+    # Индекс от количества фильмов в in_prodution до конца
+    for i in title_request[len(count_production):]:
+        movie_title.append(i.find('a').text)
+        movie_link.append(general_url + i.find('a').get('href'))
+
+    # То же самое для года фильма
+    # Сначала приводим данные в читаемый вид
+    for i in year_request[len(count_production):]:
+        filtered_movie_year.append(unicodedata.normalize("NFKD", i.text))
+    for i in filtered_movie_year:
+        movie_year.append(i.strip())
+
+    # То же самое для ролей
+    # Сначала фильтруем -> замена символов, удаление пробелов и переносов строк
+    for i in role_request[len(count_production):]:
+        role_list.append(i.text.replace('...', '').strip().split('\n'))
+    for i in role_list:
+        if len(i) > 5:
+            role.append(i[5])
+        else:
+            role.append(i[4])
+
+    count_movie = len(movie_title)
+    print("count movie = " + str(count_movie))
+    print("title len " + str(len(movie_title)))
+    print("link len " + str(len(movie_link)))
+    print("role len " + str(len(role)))
+    print("year len " + str(len(movie_year)))
+    print(role)
+    #return bio
+'''
++ name
++ born info
++ photo
++ bio
++ count movie
++ movie year
++ movie title
++ movie link
++ role
+'''
+
+a = request_json()
+b = get_actor_info(a)
+print(b)
 
 def responce_html(id):
     actor_id = id
@@ -114,8 +240,7 @@ def request_js():
     url = "https://v2.sg.media-imdb.com/suggestion/" + first_letter + "/" + name + ".json"
     responce = urlopen(url)
     # Заменяем _ на "пробел", чтобы посчитать количество слов
-    replace_name = name.replace('_', ' ')
-    count_name = replace_name.split(' ')
+    count_name = name.split('_')
     # Если 2 и больше слов, считаем, что ввели имя и фамилию
     # Количество id будет равно 1
     actor_info_from_json = []
@@ -148,21 +273,10 @@ def request_js():
 
     return actor_info_from_json
 
-a = request_js()
-print(a)
+# a = request_js()
+# print(len(a))
 '''
-    
-запрос ролей
-
-в выводе pre-production - исправить
 
 нужно отслеживать complete
-
-выводить список фильмов не из credits, а считать его, как длину списка
-
-проверить если актер умер
-
-вывести подсказку на имя актера (ввели только имя, 
-    показываем всех актеров с таким именем)
 
 '''
