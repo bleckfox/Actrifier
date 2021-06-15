@@ -129,6 +129,7 @@ def get_actor_info(id):
     role_list = []              # Вспомогательный список для фильтрации
     role = []
     count_production = []
+    count_completed = []
     movie_request = body.find('div', {'id': 'filmography'})\
         .find('div', {'class': 'filmo-category-section'})
     title_request = movie_request.find_all('b')
@@ -143,26 +144,30 @@ def get_actor_info(id):
         print('Нет статуса in_production')
 
     # Индекс от количества фильмов в in_prodution до конца
-    for i in title_request[len(count_production):]:
+    production_len = len(count_production) - len(count_completed)
+    for i in title_request[production_len:]:
         movie_title.append(i.find('a').text)
         movie_link.append(general_url + i.find('a').get('href'))
 
     # То же самое для года фильма
     # Сначала приводим данные в читаемый вид
-    for i in year_request[len(count_production):]:
+    for i in year_request[production_len:]:
         filtered_movie_year.append(unicodedata.normalize("NFKD", i.text))
     for i in filtered_movie_year:
         movie_year.append(i.strip())
 
     # То же самое для ролей
     # Сначала фильтруем -> замена символов, удаление пробелов и переносов строк
-    for i in role_request[len(count_production):]:
+    for i in role_request[production_len:]:
         role_list.append(i.text.replace('...', '').strip().split('\n'))
     for i in role_list:
-        if len(i) > 5:
-            role.append(i[5])
-        else:
-            role.append(i[4])
+        try:
+            if len(i) > 5:
+                role.append(i[5])
+            else:
+                role.append(i[4])
+        except:
+            role.append('Unknown role')
 
     # Количество фильмов
     count_movie = len(movie_title)
@@ -185,7 +190,8 @@ def get_actor_info(id):
                              'bio - строка',
                              'bio_more - строка (ссылка)',
                              'count_movie - число',
-                             'movie_list - список словарей']
+                             'movie_list - список словарей',
+                             'count_completed - список']
     return_value = [name,
                     born_info,
                     death_info,
@@ -194,7 +200,8 @@ def get_actor_info(id):
                     bio,
                     bio_more,
                     count_movie,
-                    movie_list]
+                    movie_list,
+                    count_completed]
 
     # print("count movie = " + str(count_movie))
     # print("title len " + str(len(movie_title)))

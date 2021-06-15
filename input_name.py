@@ -111,6 +111,7 @@ def get_actor_info(id):
     role_list = []              # Вспомогательный список для фильтрации
     role = []
     count_production = []
+    count_completed = []
     movie_request = body.find('div', {'id': 'filmography'})\
         .find('div', {'class': 'filmo-category-section'})
     title_request = movie_request.find_all('b')
@@ -120,31 +121,39 @@ def get_actor_info(id):
         in_production = movie_request.find_all('a', {'class': 'in_production'})
         for i in in_production:
             count_production.append(i)
-        # if compete
+
+        for status in count_production:
+            if status.text == 'completed':
+                count_completed.append(status.text)
     except:
         print('Нет статуса in_production')
 
     # Индекс от количества фильмов в in_prodution до конца
-    for i in title_request[len(count_production):]:
+    production_len = len(count_production) - len(count_completed)
+    for i in title_request[production_len:]:
         movie_title.append(i.find('a').text)
         movie_link.append(general_url + i.find('a').get('href'))
 
     # То же самое для года фильма
     # Сначала приводим данные в читаемый вид
-    for i in year_request[len(count_production):]:
+    for i in year_request[production_len:]:
         filtered_movie_year.append(unicodedata.normalize("NFKD", i.text))
     for i in filtered_movie_year:
         movie_year.append(i.strip())
 
     # То же самое для ролей
     # Сначала фильтруем -> замена символов, удаление пробелов и переносов строк
-    for i in role_request[len(count_production):]:
+    for i in role_request[production_len:]:
         role_list.append(i.text.replace('...', '').strip().split('\n'))
     for i in role_list:
-        if len(i) > 5:
-            role.append(i[5])
-        else:
-            role.append(i[4])
+        print(i)
+        try:
+            if len(i) > 5:
+                role.append(i[5])
+            else:
+                role.append(i[4])
+        except:
+            role.append('Unknown role')
 
     count_movie = len(movie_title)
     print("count movie = " + str(count_movie))
@@ -152,7 +161,7 @@ def get_actor_info(id):
     print("link len " + str(len(movie_link)))
     print("role len " + str(len(role)))
     print("year len " + str(len(movie_year)))
-    print(role)
+
     #return bio
 '''
 + name
@@ -164,6 +173,12 @@ def get_actor_info(id):
 + movie title
 + movie link
 + role
+
+announced
+pre-production
+filming
+post-production
+completed
 '''
 
 a = request_json()
