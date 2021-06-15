@@ -37,12 +37,20 @@ def request_js(search):
     if (len(count_name)) >= 2:
         data_json = json.loads(responce.read())
         first_level = data_json['d'][0]
-        actor_info_from_json.append({
-            'name': first_level['l'],
-            'id': first_level['id'],
-            'photo': first_level['i']['imageUrl'],
-            'description': first_level['s']
-        })
+        try:
+            actor_info_from_json.append({
+                'name': first_level['l'],
+                'id': first_level['id'],
+                'photo': first_level['i']['imageUrl'],
+                'description': first_level['s']
+            })
+        except:
+            actor_info_from_json.append({
+                'name': first_level['l'],
+                'id': first_level['id'],
+                'photo': None,
+                'description': 'Unkown description'
+            })
     # Иначе собираем все id
     else:
         try:
@@ -79,7 +87,10 @@ def get_actor_info(id):
     name = body.find('h1', {'class': 'header'}).find('span', {'class': 'itemprop'}).text
 
     # Get actor photo
-    img_link = body.find('img', {'id': 'name-poster'}).get('src')
+    try:
+        img_link = body.find('img', {'id': 'name-poster'}).get('src')
+    except:
+        img_link = body.find('img', {'class': 'no-pic-image'}).get('src')
 
     # Get actor bio
     bio_body = body.find('div', {'id': 'name-bio-text'}).find('div', {'class': 'inline'})
@@ -117,7 +128,7 @@ def get_actor_info(id):
 
 
     except:
-        born_info = ['Not found']
+        born_info = []
         born_year = ''
         age = 'Not found'
 
@@ -130,57 +141,63 @@ def get_actor_info(id):
     role = []
     count_production = []
     count_completed = []
-    movie_request = body.find('div', {'id': 'filmography'})\
-        .find('div', {'class': 'filmo-category-section'})
-    title_request = movie_request.find_all('b')
-    year_request = movie_request.find_all('span', {'class': 'year_column'})
-    role_request = movie_request.find_all('div', {'class': 'filmo-row'})
+
     try:
-        in_production = movie_request.find_all('a', {'class': 'in_production'})
-        for i in in_production:
-            count_production.append(i)
-        # if compete
-    except:
-        print('Нет статуса in_production')
-
-    # Индекс от количества фильмов в in_prodution до конца
-    production_len = len(count_production) - len(count_completed)
-    for i in title_request[production_len:]:
-        movie_title.append(i.find('a').text)
-        movie_link.append(general_url + i.find('a').get('href'))
-
-    # То же самое для года фильма
-    # Сначала приводим данные в читаемый вид
-    for i in year_request[production_len:]:
-        filtered_movie_year.append(unicodedata.normalize("NFKD", i.text))
-    for i in filtered_movie_year:
-        movie_year.append(i.strip())
-
-    # То же самое для ролей
-    # Сначала фильтруем -> замена символов, удаление пробелов и переносов строк
-    for i in role_request[production_len:]:
-        role_list.append(i.text.replace('...', '').strip().split('\n'))
-    for i in role_list:
+        movie_request = body.find('div', {'id': 'filmography'}) \
+            .find('div', {'class': 'filmo-category-section'})
+        title_request = movie_request.find_all('b')
+        year_request = movie_request.find_all('span', {'class': 'year_column'})
+        role_request = movie_request.find_all('div', {'class': 'filmo-row'})
         try:
-            if len(i) > 5:
-                role.append(i[5])
-            else:
-                role.append(i[4])
+            in_production = movie_request.find_all('a', {'class': 'in_production'})
+            for i in in_production:
+                count_production.append(i)
+            # if compete
         except:
-            role.append('Unknown role')
+            print('Нет статуса in_production')
 
-    # Количество фильмов
-    count_movie = len(movie_title)
+        # Индекс от количества фильмов в in_prodution до конца
+        production_len = len(count_production) - len(count_completed)
+        for i in title_request[production_len:]:
+            movie_title.append(i.find('a').text)
+            movie_link.append(general_url + i.find('a').get('href'))
+        last_movie = title_request[0].find('a').text
 
-    # Сформируем словарь данных для фильмов
-    movie_list = []
-    for i in range(count_movie):
-        movie_list.append({
-            'title': movie_title[i],
-            'year': movie_year[i],
-            'link': movie_link[i],
-            'role': role[i],
-        })
+        # То же самое для года фильма
+        # Сначала приводим данные в читаемый вид
+        for i in year_request[production_len:]:
+            filtered_movie_year.append(unicodedata.normalize("NFKD", i.text))
+        for i in filtered_movie_year:
+            movie_year.append(i.strip())
+
+        # То же самое для ролей
+        # Сначала фильтруем -> замена символов, удаление пробелов и переносов строк
+        for i in role_request[production_len:]:
+            role_list.append(i.text.replace('...', '').strip().split('\n'))
+        for i in role_list:
+            try:
+                if len(i) > 5:
+                    role.append(i[5])
+                else:
+                    role.append(i[4])
+            except:
+                role.append('Unknown role')
+
+        # Количество фильмов
+        count_movie = len(movie_title)
+
+        # Сформируем словарь данных для фильмов
+        movie_list = []
+        for i in range(count_movie):
+            movie_list.append({
+                'title': movie_title[i],
+                'year': movie_year[i],
+                'link': movie_link[i],
+                'role': role[i],
+            })
+    except:
+        count_movie = 0
+        movie_list = []
 
     return_value_explaine = ['name - строка',
                              'born_info - список (см.выше)',
@@ -191,7 +208,8 @@ def get_actor_info(id):
                              'bio_more - строка (ссылка)',
                              'count_movie - число',
                              'movie_list - список словарей',
-                             'count_completed - список']
+                             'count_completed - список',
+                             'last_movie - строка']
     return_value = [name,
                     born_info,
                     death_info,
@@ -201,7 +219,8 @@ def get_actor_info(id):
                     bio_more,
                     count_movie,
                     movie_list,
-                    count_completed]
+                    count_completed,
+                    last_movie]
 
     # print("count movie = " + str(count_movie))
     # print("title len " + str(len(movie_title)))

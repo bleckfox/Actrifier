@@ -61,7 +61,10 @@ def get_actor_info(id):
     name = body.find('h1', {'class': 'header'}).find('span', {'class': 'itemprop'}).text
 
     # Get actor photo
-    img_link = body.find('img', {'id': 'name-poster'}).get('src')
+    try:
+        img_link = body.find('img', {'id': 'name-poster'}).get('src')
+    except:
+        img_link = body.find('img', {'class': 'no-pic-image'}).get('src')
 
     # Get actor bio
     bio_body = body.find('div', {'id': 'name-bio-text'}).find('div', {'class': 'inline'})
