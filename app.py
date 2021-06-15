@@ -1,9 +1,11 @@
-from imdb_parser import *
 from random import randint
 
 from flask import Flask
 from flask import render_template
 from flask import request
+
+from imdb_parser import *
+from scheduled_cheker import CheckerScheduler
 
 app = Flask(__name__)
 
@@ -46,4 +48,5 @@ def card():
 
 
 if __name__ == '__main__':
+    checkerScheduler = CheckerScheduler()
     app.run()
