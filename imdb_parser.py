@@ -65,14 +65,23 @@ def request_js(search):
     return actor_info_from_json
 
 
+def check_actor_existence(id):
+    main_url = 'https://www.imdb.com/name/'
+    make_request = main_url + id
+    res = requests.get(make_request)
+    #res.raise_for_status()
+    if res.status_code >= 400:
+        return None
+    else:
+        return res
+
+
 def responce_html(id):
     now = datetime.datetime.now()
-    actor_id = id
     general_url = 'https://www.imdb.com'
-    main_url = 'https://www.imdb.com/name/'
-    make_request = main_url + actor_id
-    res = requests.get(make_request)
-    res.raise_for_status()
+    res = check_actor_existence(id)
+    if res is None:
+        raise NameError
     soup = bs4.BeautifulSoup(res.text, features='html.parser')
 
     # Get Actor Name
