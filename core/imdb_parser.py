@@ -34,42 +34,48 @@ def request_js(search):
     # Если 2 и больше слов, считаем, что ввели имя и фамилию
     # Количество id будет равно 1
     actor_info_from_json = []
-    if (len(count_name)) >= 2:
+
+    # Temporary or permanently disabled
+    # if (len(count_name)) >= 2:
+    #     data_json = json.loads(responce.read())
+    #     first_level = data_json['d'][0]
+    #     try:
+    #         actor_info_from_json.append({
+    #             'name': first_level['l'],
+    #             'id': first_level['id'],
+    #             'photo': first_level['i']['imageUrl'],
+    #             'description': first_level['s']
+    #         })
+    #     except:
+    #         actor_info_from_json.append({
+    #             'name': first_level['l'],
+    #             'id': first_level['id'],
+    #             'photo': None,
+    #             'description': 'Unknown description'
+    #         })
+    # # Иначе собираем все id
+    # else:
+    try:
         data_json = json.loads(responce.read())
-        first_level = data_json['d'][0]
-        try:
-            actor_info_from_json.append({
-                'name': first_level['l'],
-                'id': first_level['id'],
-                'photo': first_level['i']['imageUrl'],
-                'description': first_level['s']
-            })
-        except:
-            actor_info_from_json.append({
-                'name': first_level['l'],
-                'id': first_level['id'],
-                'photo': None,
-                'description': 'Unkown description'
-            })
-    # Иначе собираем все id
-    else:
-        try:
-            data_json = json.loads(responce.read())
-            # Однозначно не будет 150 людей с одним именем на imdb
-            for i in range(150):
+        # Однозначно не будет 150 людей с одним именем на imdb
+        for i in range(150):
+            try:
                 level = data_json['d'][i]
-                actor_info_from_json.append({
-                    'name': level['l'],
-                    'id': level['id'],
-                    'photo': level['i']['imageUrl'],
-                    'description': level['s']
-                })
-        # Поэтому всегда будут выходить исключения
-        # Их можно игнорировать
-        except:
-            print('Two or more words in search field')
-            print('OR')
-            print('Something fucked up ! ! !')
+                if level['id'].startswith('nm'):
+                    actor_info_from_json.append({
+                        'name': level['l'],
+                        'id': level['id'],
+                        'photo': level['i']['imageUrl'] if 'i' in level and 'imageUrl' in level['i'] else None,
+                        'description': level['s'] if 's' in level else None,
+                    })
+            except Exception as e:
+                print(f'Actor {i} read failed with {str(e)}')
+    # Поэтому всегда будут выходить исключения
+    # Их можно игнорировать
+    except:
+        print('Two or more words in search field')
+        print('OR')
+        print('Something fucked up ! ! !')
     return actor_info_from_json
 
 def get_actor_info(id):

@@ -1,0 +1,1 @@
+docker build -t actrifier:latest -f Dockerfile .

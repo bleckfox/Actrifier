@@ -1,1 +1,4 @@
 /.idea/
+/nginx/conf.d/fullchain.pem
+/nginx/conf.d/privkey.pem
+/core/firebase_service_account_key.json

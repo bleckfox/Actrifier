@@ -23,7 +23,7 @@ class CheckerScheduler:
     def __init__(self):
         self.scheduler = sched.scheduler(time.time, time.sleep)
 
-        with open('subscriptions.json', 'r') as subsFile:
+        with open('/data/subscriptions.json', 'r') as subsFile:
             self.subscriptions = json.loads(subsFile.read())
 
         for actor in self.subscriptions.keys():
@@ -31,7 +31,7 @@ class CheckerScheduler:
 
         Thread(target=self.scheduler.run, daemon=True).start()
 
-        firebaseCredentials = credentials.Certificate('firebase_service_account_key.json')
+        firebaseCredentials = credentials.Certificate('/firebase_service_account_key.json')
         self.firebaseApp = initialize_app(firebaseCredentials)
 
     def addSubscription(self, actorId, firebaseToken):
@@ -122,7 +122,7 @@ class CheckerScheduler:
 
     def saveSubscriptions(self):
         dumpString = json.dumps(self.subscriptions)
-        with open('subscriptions.json', 'w') as subsFile:
+        with open('/data/subscriptions.json', 'w') as subsFile:
             subsFile.write(dumpString)
 
 

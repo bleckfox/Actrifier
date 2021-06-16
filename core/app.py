@@ -1,4 +1,5 @@
 from random import randint, choice
+from subprocess import Popen
 
 from flask import Flask
 from flask import render_template
@@ -114,7 +115,7 @@ def actor():
                 'name': info['name'],
                 'birth_info': info['born_info'] if info['born_info'] != ['Not found'] else None,
                 'death_info': info['death_info'] if info['death_info'] != [] else None,
-                'age': info['age'],
+                'age': info['age'] if info['age'] != 'Not found' else None,
                 'photo': info['img_link'],
                 'bio': info['bio'],
                 'extended_bio_link': info['bio_more'],
@@ -161,4 +162,5 @@ def removeSubscription():
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0')
+    Popen(['nginx'])  # Starting NGINX
+    app.run(host='127.0.0.1', debug=False, port=8080)
