@@ -165,6 +165,7 @@ def get_actor_info(id):
             movie_title.append(i.find('a').text)
             movie_link.append(general_url + i.find('a').get('href'))
         last_movie = title_request[0].find('a').text
+        all_movies_count = len(title_request)
 
         # То же самое для года фильма
         # Сначала приводим данные в читаемый вид
@@ -202,7 +203,7 @@ def get_actor_info(id):
         count_movie = 0
         last_movie = None
         movie_list = []
-        last_movie = None
+        all_movies_count = 0
 
     return_value_explaine = ['name - строка',
                              'born_info - список (см.выше)',
@@ -214,7 +215,8 @@ def get_actor_info(id):
                              'count_movie - число',
                              'movie_list - список словарей',
                              'count_completed - список',
-                             'last_movie - строка']
+                             'last_movie - строка',
+                             'all_movies_count - число']
 
     return_value = {'name': name,
                     'born_info': born_info,
@@ -225,8 +227,9 @@ def get_actor_info(id):
                     'bio_more': bio_more,
                     'count_movie': count_movie,
                     'movie_list': movie_list,
-                    'count_completed': count_completed,
-                    'last_movie': last_movie}
+                    'count_completed': len(count_completed),
+                    'last_movie': last_movie,
+                    'all_movies_count': all_movies_count}
 
     # print("count movie = " + str(count_movie))
     # print("title len " + str(len(movie_title)))

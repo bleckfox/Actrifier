@@ -111,15 +111,15 @@ def actor():
             info = get_actor_info(request.args.get('id', type=str))
             return jsonify({'actor': {
                 'id': request.args.get('id', type=str),
-                'name': info[0],
-                'birth_info': info[1] if info[1] != ['Not found'] else None,
-                'death_info': info[2] if info[2] != [] else None,
-                'age': info[3],
-                'photo': info[4],
-                'bio': info[5],
-                'extended_bio_link': info[6],
-                'movie_count': info[7],
-                'movies': info[8],
+                'name': info['name'],
+                'birth_info': info['born_info'] if info['born_info'] != ['Not found'] else None,
+                'death_info': info['death_info'] if info['death_info'] != [] else None,
+                'age': info['age'],
+                'photo': info['img_link'],
+                'bio': info['bio'],
+                'extended_bio_link': info['bio_more'],
+                'movie_count': info['count_movie'],
+                'movies': info['movie_list'],
             }}), 200
         except NameError:
             abort(404)

@@ -11,9 +11,7 @@ from imdb_parser import get_actor_info
 class CheckerScheduler:
     def _appendCheckerSchedule(self, actorId, randomTime=True):
         if actorId is not None and type(actorId) is str and actorId.startswith('nm'):
-            print(f'New schedule item: {actorId} details: {self.subscriptions[actorId]}')
-
-            # schedulerHasStopped = self.scheduler.empty()
+            # print(f'New schedule item: {actorId} details: {self.subscriptions[actorId]}')
             self.scheduler.enter(delay=randrange(600, 86400) if randomTime else 86400, priority=1,
                                  action=self.checkActor, argument=(actorId,))
 
@@ -66,44 +64,61 @@ class CheckerScheduler:
 
     def checkActor(self, actorId):
         print(f'CHECK FOR {actorId}')
-        if actorId not in self.subscriptions:
-            raise NameError
+        try:
+            if actorId not in self.subscriptions:
+                raise NameError
 
-        info = get_actor_info(actorId)
-        count, completedCount, actorName, actorPicture, lastCompletedTitle, lastTitle = info[7], len(info[9]), info[0], info[4], info[8][0], info[10]
-        save = False
-        notification = None
+            info = get_actor_info(actorId)
+            completedCount = info['count_completed']
+            actorName = info['name']
+            actorPicture = info['img_link']
+            lastCompletedTitle = info['movie_list'][0]
+            lastTitle = info['last_movie']
+            allMoviesCount = info['all_movies_count']
 
-        if 'count' not in self.subscriptions[actorId] or 'completedCount' not in self.subscriptions[actorId]:
-            self.subscriptions[actorId]['count'] = count
-            self.subscriptions[actorId]['completedCount'] = completedCount
-            save = True
-        else:
-            if completedCount < self.subscriptions[actorId]['completedCount']:
+            save = False
+            notification = None
+
+            if 'count' not in self.subscriptions[actorId] or 'completedCount' not in self.subscriptions[actorId]:
+                print('Initializing movie count (first time check)')
+                self.subscriptions[actorId]['count'] = allMoviesCount
                 self.subscriptions[actorId]['completedCount'] = completedCount
                 save = True
-            elif completedCount > self.subscriptions[actorId]['completedCount']:
-                notification = messaging.Notification(title=f'{actorName} has a new title upcoming!', body=f'Title named {lastCompletedTitle["title"]} going to be released soon', image=actorPicture)
-                self.subscriptions[actorId]['completedCount'] = completedCount
-                save = True
+            else:
+                if completedCount < self.subscriptions[actorId]['completedCount']:
+                    print('Completed count is less than saved (movie status changed on IMDB)')
+                    self.subscriptions[actorId]['completedCount'] = completedCount
+                    save = True
+                elif completedCount > self.subscriptions[actorId]['completedCount']:
+                    print('Completed count is greater than saved (new movie with status "completed")')
+                    notification = messaging.Notification(title=f'{actorName} has a new title upcoming!', body=f'Title named {lastCompletedTitle["title"]} going to be released soon', image=actorPicture)
+                    self.subscriptions[actorId]['completedCount'] = completedCount
+                    save = True
 
-            if count < self.subscriptions[actorId]['count']:
-                self.subscriptions[actorId]['count'] = count
-                save = True
-            elif count > self.subscriptions[actorId]['count']:
-                notification = messaging.Notification(title=f'{actorName} just got a new title!', body=f'New title {lastCompletedTitle} going to be a hit in a few years', image=actorPicture)
-                self.subscriptions[actorId]['count'] = count
-                save = True
+                if allMoviesCount < self.subscriptions[actorId]['count']:
+                    print('Movie count is less than saved (something changed on IMDB)')
+                    self.subscriptions[actorId]['count'] = allMoviesCount
+                    save = True
+                elif allMoviesCount > self.subscriptions[actorId]['count']:
+                    print('Movie count is greater than saved (new movie is out)')
+                    notification = messaging.Notification(title=f'{actorName} just got a new title!', body=f'New title {lastTitle} going to be a hit in a few years', image=actorPicture)
+                    self.subscriptions[actorId]['count'] = allMoviesCount
+                    save = True
 
-        if save:
-            self.saveSubscriptions()
+            if save:
+                self.saveSubscriptions()
 
-        self._appendCheckerSchedule(actorId, randomTime=False)
-
-        if notification:
-            android = messaging.AndroidConfig(notification=messaging.AndroidNotification(default_sound='', default_vibrate_timings=True, icon='launch_logo'), priority="high")
-            msg = messaging.MulticastMessage(tokens=self.subscriptions[actorId]['fireTokens'], notification=notification, android=android, data={"click_action": "FLUTTER_NOTIFICATION_CLICK"})
-            messaging.send_multicast(msg)
+            if notification:
+                android = messaging.AndroidConfig(notification=messaging.AndroidNotification(default_sound=True, default_vibrate_timings=True, icon='launch_logo'), priority="high")
+                msg = messaging.MulticastMessage(tokens=self.subscriptions[actorId]['fireTokens'], notification=notification, android=android, data={"click_action": "FLUTTER_NOTIFICATION_CLICK"})
+                fireResponse = messaging.send_multicast(msg)
+                for resp in fireResponse.responses:
+                    if resp.exception:
+                        print(f'Firebase msg exception for item {str(resp.__dict__)}')
+        except Exception as e:
+            print(f'Check actor (id {actorId}) exception: {str(e)}')
+        finally:
+            self._appendCheckerSchedule(actorId, randomTime=False)
 
     def saveSubscriptions(self):
         dumpString = json.dumps(self.subscriptions)
