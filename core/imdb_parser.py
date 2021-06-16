@@ -57,8 +57,8 @@ def request_js(search):
     # else:
     try:
         data_json = json.loads(responce.read())
-        # Однозначно не будет 150 людей с одним именем на imdb
-        for i in range(150):
+        # Однозначно не будет 16 людей с одним именем на imdb (их json не выдаст больше 8)
+        for i in range(16):
             try:
                 level = data_json['d'][i]
                 if level['id'].startswith('nm'):
@@ -68,6 +68,9 @@ def request_js(search):
                         'photo': level['i']['imageUrl'] if 'i' in level and 'imageUrl' in level['i'] else None,
                         'description': level['s'] if 's' in level else None,
                     })
+            except IndexError:
+                # Actor count is less than set 16. It's normal. We shouldn't worry. Everything is ok. Right?
+                pass
             except Exception as e:
                 print(f'Actor {i} read failed with {str(e)}')
     # Поэтому всегда будут выходить исключения
