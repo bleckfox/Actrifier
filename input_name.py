@@ -164,6 +164,7 @@ def get_actor_info(id):
     print("link len " + str(len(movie_link)))
     print("role len " + str(len(role)))
     print("year len " + str(len(movie_year)))
+    print('completed count ' + str(len(count_completed)))
 
     #return bio
 '''

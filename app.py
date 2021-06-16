@@ -60,15 +60,15 @@ def card():
         return render_template("card.html",
                                #search_help_list=search_help_list,
                                lucky_list=lucky_list,
-                               actor_name=actor_info[0],
-                               actor_born_info=actor_info[1],
-                               actor_death_info=actor_info[2],
-                               actor_age=actor_info[3],
-                               actor_img_link=actor_info[4],
-                               actor_bio=actor_info[5],
-                               actor_bio_more=actor_info[6],
-                               actor_number_movie=actor_info[7],
-                               movie_info=actor_info[8])
+                               actor_name=actor_info['name'],
+                               actor_born_info=actor_info['born_info'],
+                               actor_death_info=actor_info['death_info'],
+                               actor_age=actor_info['age'],
+                               actor_img_link=actor_info['img_link'],
+                               actor_bio=actor_info['bio'],
+                               actor_bio_more=actor_info['bio_more'],
+                               actor_number_movie=actor_info['count_movie'],
+                               movie_info=actor_info['movie_list'])
 
 
 # @app.route('/actor', methods = ['POST'])

@@ -152,7 +152,10 @@ def get_actor_info(id):
             in_production = movie_request.find_all('a', {'class': 'in_production'})
             for i in in_production:
                 count_production.append(i)
-            # if compete
+
+            for status in count_production:
+                if status.text == 'completed':
+                    count_completed.append(status.text)
         except:
             print('Нет статуса in_production')
 
@@ -197,6 +200,7 @@ def get_actor_info(id):
             })
     except:
         count_movie = 0
+        last_movie = None
         movie_list = []
         last_movie = None
 
@@ -211,17 +215,18 @@ def get_actor_info(id):
                              'movie_list - список словарей',
                              'count_completed - список',
                              'last_movie - строка']
-    return_value = [name,
-                    born_info,
-                    death_info,
-                    age,
-                    img_link,
-                    bio,
-                    bio_more,
-                    count_movie,
-                    movie_list,
-                    count_completed,
-                    last_movie]
+
+    return_value = {'name': name,
+                    'born_info': born_info,
+                    'death_info': death_info,
+                    'age': age,
+                    'img_link': img_link,
+                    'bio': bio,
+                    'bio_more': bio_more,
+                    'count_movie': count_movie,
+                    'movie_list': movie_list,
+                    'count_completed': count_completed,
+                    'last_movie': last_movie}
 
     # print("count movie = " + str(count_movie))
     # print("title len " + str(len(movie_title)))
