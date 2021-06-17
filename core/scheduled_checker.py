@@ -8,30 +8,29 @@ from firebase_admin import credentials, initialize_app, messaging
 from imdb_parser import get_actor_info
 
 
-class CheckerScheduler:
-    def _appendCheckerSchedule(self, actorId, randomTime=True):
+class ActorCheckScheduler:
+    def _appendSchedule(self, actorId, randomTime=True):
         if actorId is not None and type(actorId) is str and actorId.startswith('nm'):
             # print(f'New schedule item: {actorId} details: {self.subscriptions[actorId]}')
             self.scheduler.enter(delay=randrange(600, 86400) if randomTime else 86400, priority=1,
                                  action=self.checkActor, argument=(actorId,))
-
-            # if schedulerHasStopped:  # TODO: change scheduler to something more reliable. UPD: maybe not, but scheduler needs more testing
-                # Thread(target=self.scheduler.run, daemon=True).start()
         else:
             raise ValueError
 
-    def __init__(self):
+    def __init__(self, prod=True):
         self.scheduler = sched.scheduler(time.time, time.sleep)
 
-        with open('/data/subscriptions.json', 'r') as subsFile:
+        self._subscriptionsPath = '/data/subscriptions.json' if prod else 'subscriptions.json'
+        with open(self._subscriptionsPath, 'r') as subsFile:
             self.subscriptions = json.loads(subsFile.read())
 
         for actor in self.subscriptions.keys():
-            self._appendCheckerSchedule(actor)
+            self._appendSchedule(actor)
 
         Thread(target=self.scheduler.run, daemon=True).start()
 
-        firebaseCredentials = credentials.Certificate('/firebase_service_account_key.json')
+        firebaseCredentials = credentials.Certificate(
+            '/firebase_service_account_key.json' if prod else 'firebase_service_account_key.json')
         self.firebaseApp = initialize_app(firebaseCredentials)
 
     def addSubscription(self, actorId, firebaseToken):
@@ -46,7 +45,7 @@ class CheckerScheduler:
             self.subscriptions[actorId] = {
                 "fireTokens": [firebaseToken],
             }
-            self._appendCheckerSchedule(actorId)
+            self._appendSchedule(actorId)
         self.saveSubscriptions()
 
     def removeSubscription(self, actorId, firebaseToken):
@@ -69,7 +68,7 @@ class CheckerScheduler:
                 raise NameError
 
             info = get_actor_info(actorId)
-            completedCount = info['count_completed']
+            completedCount = info['completed_count']
             actorName = info['name']
             actorPicture = info['img_link']
             lastCompletedTitle = info['movie_list'][0]
@@ -91,7 +90,9 @@ class CheckerScheduler:
                     save = True
                 elif completedCount > self.subscriptions[actorId]['completedCount']:
                     print('Completed count is greater than saved (new movie with status "completed")')
-                    notification = messaging.Notification(title=f'{actorName} has a new title upcoming!', body=f'Title named {lastCompletedTitle["title"]} going to be released soon', image=actorPicture)
+                    notification = messaging.Notification(title=f'{actorName} has a new title upcoming!',
+                                                          body=f'Title named {lastCompletedTitle["title"]} going to be released soon',
+                                                          image=actorPicture)
                     self.subscriptions[actorId]['completedCount'] = completedCount
                     save = True
 
@@ -101,7 +102,9 @@ class CheckerScheduler:
                     save = True
                 elif allMoviesCount > self.subscriptions[actorId]['count']:
                     print('Movie count is greater than saved (new movie is out)')
-                    notification = messaging.Notification(title=f'{actorName} just got a new title!', body=f'New title {lastTitle} going to be a hit in a few years', image=actorPicture)
+                    notification = messaging.Notification(title=f'{actorName} just got a new title!',
+                                                          body=f'New title {lastTitle} going to be a hit in a few years',
+                                                          image=actorPicture)
                     self.subscriptions[actorId]['count'] = allMoviesCount
                     save = True
 
@@ -109,8 +112,12 @@ class CheckerScheduler:
                 self.saveSubscriptions()
 
             if notification:
-                android = messaging.AndroidConfig(notification=messaging.AndroidNotification(default_sound=True, default_vibrate_timings=True, icon='launch_logo'), priority="high")
-                msg = messaging.MulticastMessage(tokens=self.subscriptions[actorId]['fireTokens'], notification=notification, android=android, data={"click_action": "FLUTTER_NOTIFICATION_CLICK"})
+                android = messaging.AndroidConfig(
+                    notification=messaging.AndroidNotification(default_sound=True, default_vibrate_timings=True,
+                                                               icon='launch_logo'), priority="high")
+                msg = messaging.MulticastMessage(tokens=self.subscriptions[actorId]['fireTokens'],
+                                                 notification=notification, android=android,
+                                                 data={"click_action": "FLUTTER_NOTIFICATION_CLICK"})
                 fireResponse = messaging.send_multicast(msg)
                 for resp in fireResponse.responses:
                     if resp.exception:
@@ -118,22 +125,9 @@ class CheckerScheduler:
         except Exception as e:
             print(f'Check actor (id {actorId}) exception: {str(e)}')
         finally:
-            self._appendCheckerSchedule(actorId, randomTime=False)
+            self._appendSchedule(actorId, randomTime=False)
 
     def saveSubscriptions(self):
         dumpString = json.dumps(self.subscriptions)
-        with open('/data/subscriptions.json', 'w') as subsFile:
+        with open(self._subscriptionsPath, 'w') as subsFile:
             subsFile.write(dumpString)
-
-
-"""if __name__ == '__main__':
-    checkerScheduler = CheckerScheduler(
-        subscriptions={
-            "nm0413168": {
-                "fireTokens": [],
-                "count": 0,
-                "completedCount": 0,
-             },
-        },
-    )
-"""

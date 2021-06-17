@@ -1,9 +1,10 @@
 import json
 import bs4
-import requests
 import datetime
 import unicodedata
 from urllib.request import urlopen
+
+import requests
 
 lucky_list = ['Hugh Jackman',
               'Christian Bale',
@@ -15,8 +16,10 @@ lucky_list = ['Hugh Jackman',
               'Scarlett Johansson',
               'Zoe Saldana',
               'Karen Gillan']
-search_help_list = []
+# search_help_list = []
 
+
+# Name to [First Letter, name_with_underscore_instead_of_spaces_and_lower_symbols] converter
 def input_name(name):
     search_name = name.lower()
     name_for_request = search_name.replace(' ', '_')
@@ -24,39 +27,16 @@ def input_name(name):
     return_value = [first_symbol, name_for_request]
     return return_value
 
-def request_js(search):
+
+# Quick actor search
+def actor_search(search):
     first_letter = search[0]
     name = search[1]
     url = "https://v2.sg.media-imdb.com/suggestion/" + first_letter + "/" + name + ".json"
-    responce = urlopen(url)
-    # Нужно, чтобы посчитать количество слов
-    count_name = name.split('_')
-    # Если 2 и больше слов, считаем, что ввели имя и фамилию
-    # Количество id будет равно 1
+    response = urlopen(url)
     actor_info_from_json = []
-
-    # Temporary or permanently disabled
-    # if (len(count_name)) >= 2:
-    #     data_json = json.loads(responce.read())
-    #     first_level = data_json['d'][0]
-    #     try:
-    #         actor_info_from_json.append({
-    #             'name': first_level['l'],
-    #             'id': first_level['id'],
-    #             'photo': first_level['i']['imageUrl'],
-    #             'description': first_level['s']
-    #         })
-    #     except:
-    #         actor_info_from_json.append({
-    #             'name': first_level['l'],
-    #             'id': first_level['id'],
-    #             'photo': None,
-    #             'description': 'Unknown description'
-    #         })
-    # # Иначе собираем все id
-    # else:
     try:
-        data_json = json.loads(responce.read())
+        data_json = json.loads(response.read())
         # Однозначно не будет 16 людей с одним именем на imdb (их json не выдаст больше 8)
         for i in range(16):
             try:
@@ -75,18 +55,31 @@ def request_js(search):
                 print(f'Actor {i} read failed with {str(e)}')
     # Поэтому всегда будут выходить исключения
     # Их можно игнорировать
-    except:
+    except Exception as e:
         print('Two or more words in search field')
         print('OR')
         print('Something fucked up ! ! !')
+        print(f'Exception is {str(e)}')
     return actor_info_from_json
 
-def get_actor_info(id):
+
+# Checks if actor exists on IMDb and if they do, returns their profile webpage content
+def check_actor_existence(actor_id):
+    main_url = 'https://www.imdb.com/name/'
+    make_request = main_url + actor_id
+    res = requests.get(make_request, headers={'accept-language': 'en-US;en'})
+    if res.status_code >= 400:
+        return None
+    else:
+        return res
+
+
+# Extended actor information
+def get_actor_info(actor_id):
     # Чтобы посчитать сколько актеру сейчас лет (если жив)
     now = datetime.datetime.now()
-    actor_id = id
     general_url = 'https://www.imdb.com'
-    res = check_actor_existence(id)
+    res = check_actor_existence(actor_id)
     if res is None:
         raise NameError
     soup = bs4.BeautifulSoup(res.text, features='html.parser')
@@ -94,11 +87,13 @@ def get_actor_info(id):
 
     # Get actor name
     name = body.find('h1', {'class': 'header'}).find('span', {'class': 'itemprop'}).text
+    if name not in lucky_list:
+        lucky_list.append(name)
 
     # Get actor photo
     try:
         img_link = body.find('img', {'id': 'name-poster'}).get('src')
-    except:
+    except AttributeError:
         img_link = body.find('img', {'class': 'no-pic-image'}).get('src')
 
     # Get actor bio
@@ -107,13 +102,13 @@ def get_actor_info(id):
     bio_more = general_url + bio_body.find('span').find('a').get('href')
 
     # Get actor born info
-    born_info = []
+    birth_info = []
     death_info = []
     try:
         born_request = body.find('div', {'id': 'name-born-info'}).find_all('a')
         # ['August 20', '1974', 'Vicenza, Veneto, Italy']
         for i in born_request:
-            born_info.append(i.text)
+            birth_info.append(i.text)
 
         # Проверяем жив ли актер
         try:
@@ -123,22 +118,19 @@ def get_actor_info(id):
                 death_info.append(i.text)
 
             # Проверка месяца в дате рождения. Если есть выполним код ниже
-            if len(born_info[0]) > 4:
-                age = int(death_info[1]) - int(born_info[1])
+            if len(birth_info[0]) > 4:
+                age = int(death_info[1]) - int(birth_info[1])
             else:
-                age = int(death_info[0]) - int(born_info[0])
-        except:
+                age = int(death_info[0]) - int(birth_info[0])
+        except AttributeError:
             # Живой
             # Проверка месяца в дате рождения. Если есть выполним код ниже
-            if len(born_info[0]) > 4:
-                age = now.year - int(born_info[1])
+            if len(birth_info[0]) > 4:
+                age = now.year - int(birth_info[1])
             else:
-                age = now.year - int(born_info[0])
-
-
+                age = now.year - int(birth_info[0])
     except:
-        born_info = []
-        born_year = ''
+        birth_info = []
         age = 'Not found'
 
     # Get movie title and link and role
@@ -149,7 +141,7 @@ def get_actor_info(id):
     role_list = []              # Вспомогательный список для фильтрации
     role = []
     count_production = []
-    count_completed = []
+    completed_count = 0
 
     try:
         movie_request = body.find('div', {'id': 'filmography'}) \
@@ -164,12 +156,14 @@ def get_actor_info(id):
 
             for status in count_production:
                 if status.text == 'completed':
-                    count_completed.append(status.text)
-        except:
+                    completed_count += 1
+        except Exception as e:
             print('Нет статуса in_production')
+            print(str(e))
+            print(type(e))
 
         # Индекс от количества фильмов в in_prodution до конца
-        production_len = len(count_production) - len(count_completed)
+        production_len = len(count_production) - completed_count
         for i in title_request[production_len:]:
             movie_title.append(i.find('a').text)
             movie_link.append(general_url + i.find('a').get('href'))
@@ -197,11 +191,11 @@ def get_actor_info(id):
                 role.append('Unknown role')
 
         # Количество фильмов
-        count_movie = len(movie_title)
+        movie_count = len(movie_title)
 
         # Сформируем словарь данных для фильмов
         movie_list = []
-        for i in range(count_movie):
+        for i in range(movie_count):
             movie_list.append({
                 'title': movie_title[i],
                 'year': movie_year[i],
@@ -209,51 +203,41 @@ def get_actor_info(id):
                 'role': role[i],
             })
     except:
-        count_movie = 0
+        movie_count = 0
         last_movie = None
         movie_list = []
         all_movies_count = 0
 
-    return_value_explaine = ['name - строка',
-                             'born_info - список (см.выше)',
-                             'death_info - список (см.выше)',
-                             'age - число',
-                             'img_link - строка',
-                             'bio - строка',
-                             'bio_more - строка (ссылка)',
-                             'count_movie - число',
-                             'movie_list - список словарей',
-                             'count_completed - список',
-                             'last_movie - строка',
-                             'all_movies_count - число']
+    #  'name - строка',
+    #  'birth_info - список (см.выше)',
+    #  'death_info - список (см.выше)',
+    #  'age - число',
+    #  'img_link - строка',
+    #  'bio - строка',
+    #  'bio_more - строка (ссылка)',
+    #  'movie_count - число',
+    #  'movie_list - список словарей',
+    #  'completed_count - число',
+    #  'last_movie - строка',
+    #  'all_movies_count - число',
 
     return_value = {'name': name,
-                    'born_info': born_info,
+                    'birth_info': birth_info,
                     'death_info': death_info,
                     'age': age,
                     'img_link': img_link,
                     'bio': bio,
                     'bio_more': bio_more,
-                    'count_movie': count_movie,
+                    'movie_count': movie_count,
                     'movie_list': movie_list,
-                    'count_completed': len(count_completed),
+                    'completed_count': completed_count,
                     'last_movie': last_movie,
                     'all_movies_count': all_movies_count}
 
-    # print("count movie = " + str(count_movie))
+    # print("count movie = " + str(movie_count))
     # print("title len " + str(len(movie_title)))
     # print("link len " + str(len(movie_link)))
     # print("role len " + str(len(role)))
     # print("year len " + str(len(movie_year)))
     # print(role)
     return return_value
-
-def check_actor_existence(id):
-    main_url = 'https://www.imdb.com/name/'
-    make_request = main_url + id
-    res = requests.get(make_request, headers={'accept-language': 'en-US;en'})
-    #res.raise_for_status()
-    if res.status_code >= 400:
-        return None
-    else:
-        return res

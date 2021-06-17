@@ -1,3 +1,4 @@
+from sys import argv
 from random import randint, choice
 from subprocess import Popen
 
@@ -6,10 +7,11 @@ from flask import render_template
 from flask import request, abort, jsonify
 
 from imdb_parser import *
-from scheduled_cheker import CheckerScheduler
+from scheduled_checker import ActorCheckScheduler
 
+prod = '--testing' not in argv
 app = Flask(__name__)
-checkerScheduler = CheckerScheduler()
+actorCheckScheduler = ActorCheckScheduler(prod=prod)
 
 
 @app.route('/')
@@ -23,14 +25,14 @@ def index():
 def card():
     if request.method == "POST":
         name = request.form['name']
-        #actor_info = []
+        # actor_info = []
         # когда проверяли только имя была ошибка -> используется до объявления
 
         # Run "Feeling lucky" if name field is empty
         if name == '':
             random_actor = randint(0, len(lucky_list)-1)
             search_name = input_name(lucky_list[random_actor])
-            actor_id = request_js(search_name)[0]['id']
+            actor_id = actor_search(search_name)[0]['id']
             actor_info = get_actor_info(actor_id)
 
         # Run search if name field is not empty
@@ -38,15 +40,15 @@ def card():
             if name not in lucky_list:
                 lucky_list.append(name)
             search_name = input_name(name)
-            actor_id = request_js(search_name)[0]['id']
+            actor_id = actor_search(search_name)[0]['id']
             actor_info = get_actor_info(actor_id)
 
         # Если только имя, выведем все имена, как подсказку
         # для поиска
-        #split_name = name.split(' ')
+        # split_name = name.split(' ')
         # if len(split_name) == 1:
         #     search_name = input_name(name)
-        #     actor_name = request_js(search_name)
+        #     actor_name = actor_search(search_name)
         #     for i in range(0, len(actor_name)):
         #         search_help_list.append(actor_name[i]['name'])
 
@@ -55,20 +57,20 @@ def card():
         #     if name not in lucky_list:
         #         lucky_list.append(name)
         #     search_name = input_name(name)
-        #     actor_id = request_js(search_name)[0]['id']
+        #     actor_id = actor_search(search_name)[0]['id']
         #     actor_info = get_actor_info(actor_id)
 
         return render_template("card.html",
-                               #search_help_list=search_help_list,
+                               # search_help_list=search_help_list,
                                lucky_list=lucky_list,
                                actor_name=actor_info['name'],
-                               actor_born_info=actor_info['born_info'],
+                               actor_born_info=actor_info['birth_info'],
                                actor_death_info=actor_info['death_info'],
                                actor_age=actor_info['age'],
                                actor_img_link=actor_info['img_link'],
                                actor_bio=actor_info['bio'],
                                actor_bio_more=actor_info['bio_more'],
-                               actor_number_movie=actor_info['count_movie'],
+                               actor_number_movie=actor_info['movie_count'],
                                movie_info=actor_info['movie_list'])
 
 
@@ -80,7 +82,7 @@ def card():
 #     if len(split_name) == 1:
 #         search_name = input_name(name)
 #         print(search_name)
-#         actor_name = request_js(search_name)
+#         actor_name = actor_search(search_name)
 #         print(actor_name)
 #         for i in range(0, len(actor_name)):
 #             search_help_list.append(actor_name[i]['name'])
@@ -98,7 +100,7 @@ def search():
     else:
         abort(400)
 
-    actors = request_js(input_name(name))
+    actors = actor_search(input_name(name))
     if len(actors) > 0:
         return jsonify({'results': actors, 'feelingLucky': False}), 200
     else:
@@ -113,13 +115,14 @@ def actor():
             return jsonify({'actor': {
                 'id': request.args.get('id', type=str),
                 'name': info['name'],
-                'birth_info': info['born_info'] if info['born_info'] != ['Not found'] else None,
+                'birth_info': info['birth_info'] if info['birth_info'] != ['Not found'] and info[
+                    'birth_info'] != [] else None,
                 'death_info': info['death_info'] if info['death_info'] != [] else None,
                 'age': info['age'] if info['age'] != 'Not found' else None,
                 'photo': info['img_link'],
                 'bio': info['bio'],
                 'extended_bio_link': info['bio_more'],
-                'movie_count': info['count_movie'],
+                'movie_count': info['movie_count'],
                 'movies': info['movie_list'],
             }}), 200
         except NameError:
@@ -136,7 +139,7 @@ def addSubscription():
 
         if check_actor_existence(actorId) is not None:
             try:
-                checkerScheduler.addSubscription(actorId=actorId, firebaseToken=firebaseToken)
+                actorCheckScheduler.addSubscription(actorId=actorId, firebaseToken=firebaseToken)
             except ValueError:
                 abort(400)
             return jsonify(), 201
@@ -153,7 +156,7 @@ def removeSubscription():
         firebaseToken = request.args.get('firebaseToken', type=str)
 
         try:
-            checkerScheduler.removeSubscription(actorId=actorId, firebaseToken=firebaseToken)
+            actorCheckScheduler.removeSubscription(actorId=actorId, firebaseToken=firebaseToken)
             return jsonify(), 200
         except ValueError:
             abort(404)
@@ -162,5 +165,6 @@ def removeSubscription():
 
 
 if __name__ == '__main__':
-    Popen(['nginx'])  # Starting NGINX
+    if prod:
+        Popen(['nginx'])  # Starting NGINX
     app.run(host='127.0.0.1', debug=False, port=8080)
