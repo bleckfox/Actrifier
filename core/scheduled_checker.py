@@ -114,7 +114,7 @@ class ActorCheckScheduler:
             if notification:
                 android = messaging.AndroidConfig(
                     notification=messaging.AndroidNotification(default_sound=True, default_vibrate_timings=True,
-                                                               icon='launch_logo'), priority="high")
+                                                               icon='notification'), priority="high")
                 msg = messaging.MulticastMessage(tokens=self.subscriptions[actorId]['fireTokens'],
                                                  notification=notification, android=android,
                                                  data={"click_action": "FLUTTER_NOTIFICATION_CLICK"})
