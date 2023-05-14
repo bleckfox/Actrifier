@@ -67,7 +67,9 @@ def actor_search(search):
 def check_actor_existence(actor_id):
     main_url = 'https://www.imdb.com/name/'
     make_request = main_url + actor_id
-    res = requests.get(make_request, headers={'accept-language': 'en-US;en'})
+    res = requests.get(make_request, headers={'accept-language': 'en-US;en', 'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/111.0'})
+    #print(res.status_code)
+    #print(res.body)
     if res.status_code >= 400:
         return None
     else:
